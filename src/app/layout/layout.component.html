@@ -1,0 +1,74 @@
+<mat-sidenav-container class="shell">
+  <mat-sidenav mode="side" opened class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">D</div>
+      <div>
+        <strong>DSSM</strong>
+        <span>Control Presupuestario</span>
+      </div>
+    </div>
+
+    <mat-nav-list class="main-nav">
+      <a mat-list-item routerLink="/dashboard" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }">
+        <mat-icon>dashboard</mat-icon><span>Dashboard ejecutivo</span>
+      </a>
+
+      <div class="nav-section">
+        <div class="section-label">Mantenedores</div>
+        <a mat-list-item routerLink="/programas" routerLinkActive="active-link">
+          <mat-icon>account_balance</mat-icon><span>Programas presupuestarios</span>
+        </a>
+        <a mat-list-item routerLink="/proveedores" routerLinkActive="active-link">
+          <mat-icon>business</mat-icon><span>Proveedores</span>
+        </a>
+        <a mat-list-item routerLink="/items-presupuestarios" routerLinkActive="active-link">
+          <mat-icon>inventory_2</mat-icon><span>Ítems presupuestarios</span>
+        </a>
+        <a mat-list-item routerLink="/tipos-cdp" routerLinkActive="active-link">
+          <mat-icon>category</mat-icon><span>Tipos de CDP</span>
+        </a>
+        <a mat-list-item routerLink="/estados-oc" routerLinkActive="active-link">
+          <mat-icon>fact_check</mat-icon><span>Estados de OC</span>
+        </a>
+        <a mat-list-item routerLink="/subtitulos-presupuestarios" routerLinkActive="active-link">
+          <mat-icon>account_tree</mat-icon><span>Subtítulos presupuestarios</span>
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="section-label">Gestión presupuestaria</div>
+        <a mat-list-item routerLink="/cdp" routerLinkActive="active-link">
+          <mat-icon>fact_check</mat-icon><span>CDP</span>
+        </a>
+        <a mat-list-item routerLink="/ordenes-compra" routerLinkActive="active-link">
+          <mat-icon>shopping_cart</mat-icon><span>Órdenes de compra</span>
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="section-label">Administración de datos</div>
+        <a mat-list-item routerLink="/importaciones" routerLinkActive="active-link">
+          <mat-icon>upload_file</mat-icon><span>Importaciones</span>
+        </a>
+        <a mat-list-item routerLink="/auditoria" routerLinkActive="active-link">
+          <mat-icon>history</mat-icon><span>Auditoría</span>
+        </a>
+        <a mat-list-item routerLink="/usuarios" routerLinkActive="active-link">
+          <mat-icon>manage_accounts</mat-icon><span>Usuarios</span>
+        </a>
+        <a mat-list-item routerLink="/roles" routerLinkActive="active-link">
+          <mat-icon>admin_panel_settings</mat-icon><span>Roles</span>
+        </a>
+      </div>
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <mat-toolbar class="topbar">
+      <span>Plataforma de Gestión Presupuestaria</span>
+      <span class="spacer"></span>
+      <button mat-stroked-button><mat-icon>person</mat-icon> Dirección</button>
+    </mat-toolbar>
+    <router-outlet />
+  </mat-sidenav-content>
+</mat-sidenav-container>

@@ -1,0 +1,166 @@
+@use '@angular/material' as mat;
+
+html, body {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, Arial, sans-serif;
+  background: #f5f7fb;
+  color: #182230;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+
+mat-sidenav-container {
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  background: #f5f7fb;
+}
+
+mat-sidenav-content {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.page { padding: 24px; }
+.page-title { font-size: 28px; font-weight: 700; margin: 0 0 4px; }
+.page-subtitle { color: #667085; margin: 0 0 24px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(180px, 1fr)); gap: 16px; }
+.kpi-card { border-radius: 18px !important; }
+.kpi-label { color: #667085; font-size: 13px; }
+.kpi-value { font-size: 24px; font-weight: 800; margin-top: 8px; min-height: 32px; }
+.table-card { margin-top: 24px; border-radius: 18px !important; overflow: hidden; }
+.full-width { width: 100%; min-width: 100%; }
+.status-chip { padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; }
+.status-alert { background: #fee4e2; color: #b42318; }
+.status-follow { background: #fef0c7; color: #b54708; }
+.status-ok { background: #dcfae6; color: #067647; }
+
+.mat-mdc-table {
+  width: 100%;
+  background: transparent;
+}
+
+.mat-mdc-row,
+.mat-mdc-header-row {
+  min-height: 48px;
+}
+
+@media (max-width: 960px) {
+  .kpi-grid { grid-template-columns: repeat(2, minmax(180px, 1fr)); }
+}
+@media (max-width: 600px) {
+  .page { padding: 14px; }
+  .kpi-grid { grid-template-columns: 1fr; }
+}
+
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.search-field {
+  width: min(680px, 100%);
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.wide-table {
+  min-width: 1180px;
+}
+
+.description-cell {
+  max-width: 420px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empty-state {
+  padding: 24px;
+  color: #667085;
+  text-align: center;
+  border-top: 1px solid rgba(16, 24, 40, 0.08);
+}
+
+.mat-mdc-paginator {
+  background: transparent;
+  border-top: 1px solid rgba(16, 24, 40, 0.08);
+}
+
+@media (max-width: 720px) {
+  .table-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .search-field {
+    width: 100%;
+  }
+}
+
+.form-card { margin-bottom: 20px; }
+.section-title { font-size: 16px; font-weight: 700; margin: 0 0 16px; color: #1f2937; }
+.maintainer-form { display: grid; grid-template-columns: repeat(3, minmax(260px, 1fr)); gap: 18px 16px; align-items: start; }
+.form-field-wide { grid-column: span 2; }
+.form-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; align-self: end; min-height: 46px; }
+.actions-cell { white-space: nowrap; }
+.deleted-row { opacity: .55; background: rgba(239, 68, 68, .04); }
+@media (max-width: 1100px) { .maintainer-form { grid-template-columns: 1fr; } .form-field-wide { grid-column: span 1; } }
+
+
+
+/* Formularios institucionales */
+.form-card {
+  border-radius: 18px !important;
+  border: 1px solid rgba(16, 24, 40, .06);
+  box-shadow: 0 8px 24px rgba(16, 24, 40, .06) !important;
+}
+
+.maintainer-form .mat-mdc-form-field,
+.maintainer-form app-search-select {
+  width: 100%;
+  min-width: 0;
+}
+
+.maintainer-form .mat-mdc-text-field-wrapper {
+  background: #ffffff;
+  border-radius: 12px !important;
+}
+
+.maintainer-form .mat-mdc-form-field-subscript-wrapper {
+  min-height: 0;
+}
+
+.maintainer-form .mat-mdc-form-field:not(.mat-form-field-invalid) .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+.maintainer-form textarea.mat-mdc-input-element {
+  resize: vertical;
+}
+
+/* Select buscable institucional: componente propio, no depende de overlay Material */
+app-search-select {
+  display: block;
+  position: relative;
+}
+
+.table-toolbar .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
