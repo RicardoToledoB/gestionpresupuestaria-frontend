@@ -1,0 +1,20 @@
+.login-shell { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: linear-gradient(135deg, #eef4ff, #f8fafc); }
+.login-card { width: min(460px, 100%); border-radius: 24px !important; box-shadow: 0 24px 60px rgba(16,24,40,.14) !important; }
+.login-card mat-card-content { padding: 32px !important; }
+.login-brand { display: flex; gap: 12px; align-items: center; margin-bottom: 22px; }
+.brand-mark { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: #2563eb; color: white; font-weight: 800; }
+.login-brand span { display: block; color: #667085; font-size: 12px; }
+h1 { margin: 0 0 6px; font-size: 26px; }
+p { margin: 0 0 18px; color: #667085; }
+.login-form { display: grid; gap: 14px; margin: 18px 0 12px; }
+.login-error { padding: 10px 12px; border-radius: 12px; background: #fee4e2; color: #b42318; font-weight: 600; }
+button { min-height: 44px; }
+
+.login-info {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+}
