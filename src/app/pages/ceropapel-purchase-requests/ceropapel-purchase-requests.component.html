@@ -1,0 +1,175 @@
+<div class="page-container ceropapel-page">
+  <header class="page-header">
+    <p class="eyebrow">Gestión Subdirección</p>
+    <h1>Solicitudes de Compra</h1>
+    <p>Consulta de solicitudes originadas en CeroPapel para seguimiento presupuestario y trazabilidad previa a la orden de compra.</p>
+  </header>
+
+  <section class="status-card" [class.status-ok]="status?.authenticated" [class.status-warning]="!status?.authenticated">
+    <div>
+      <strong>Estado integración CeroPapel</strong>
+      <p>{{ status?.message || 'Validando conexión...' }}</p>
+      <small>Origen: {{ status?.baseUrl || 'https://ceropapel-integracion-api.dssm.cl' }}{{ status?.purchaseRequestsPath || '' }}</small>
+    </div>
+    <button mat-stroked-button type="button" (click)="checkStatus()"><mat-icon>sync</mat-icon> Verificar conexión</button>
+  </section>
+
+  <section class="toolbar-card ceropapel-filters">
+    <div class="search-box">
+      <mat-icon>search</mat-icon>
+      <input [(ngModel)]="search" placeholder="Buscar por folio, justificación, estado, unidad, programa o ID" (keyup.enter)="load(0)">
+    </div>
+    <label class="date-filter">
+      <span>Desde</span>
+      <input type="date" [(ngModel)]="startDate">
+    </label>
+    <label class="date-filter">
+      <span>Hasta</span>
+      <input type="date" [(ngModel)]="endDate">
+    </label>
+    <button mat-flat-button color="primary" type="button" (click)="load(0)"><mat-icon>search</mat-icon> Buscar</button>
+    <button mat-stroked-button type="button" (click)="clear()"><mat-icon>close</mat-icon> Limpiar</button>
+  </section>
+
+  <section class="table-card">
+    @if (loading) {
+      <div class="loading"><mat-spinner diameter="36"></mat-spinner><span>Consultando CeroPapel...</span></div>
+    }
+    <div class="table-wrapper">
+      <table mat-table [dataSource]="rows" class="responsive-table ceropapel-table">
+        <ng-container matColumnDef="folio">
+          <th mat-header-cell *matHeaderCellDef>Folio / ID</th>
+          <td mat-cell *matCellDef="let row"><button type="button" class="link-button" (click)="open(row)">{{ display(row.folio || row.codigo || row.id) }}</button></td>
+        </ng-container>
+        <ng-container matColumnDef="titulo">
+          <th mat-header-cell *matHeaderCellDef>Materia / justificación</th>
+          <td mat-cell *matCellDef="let row">
+            <strong>{{ shortText(row.titulo || row.descripcion, 170) }}</strong>
+            <small>{{ shortText(row.descripcion, 210) }}</small>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let row"><span class="status-chip">{{ display(row.estado) }}</span></td>
+        </ng-container>
+        <ng-container matColumnDef="urgencia">
+          <th mat-header-cell *matHeaderCellDef>Urgencia</th>
+          <td mat-cell *matCellDef="let row"><span class="urgency-chip" [class.urgent]="urgencyLabel(row.urgencia) !== 'Normal'">{{ urgencyLabel(row.urgencia) }}</span></td>
+        </ng-container>
+        <ng-container matColumnDef="unidad">
+          <th mat-header-cell *matHeaderCellDef>Unidad / Programa</th>
+          <td mat-cell *matCellDef="let row">
+            <strong>{{ display(row.unidad || row.ubicacionId) }}</strong>
+            <small>Programa: {{ display(row.programaId) }}</small>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="fechaCreacion">
+          <th mat-header-cell *matHeaderCellDef>Creación</th>
+          <td mat-cell *matCellDef="let row">{{ date(row.fechaCreacion) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="fechaEstimada">
+          <th mat-header-cell *matHeaderCellDef>Fecha estimada</th>
+          <td mat-cell *matCellDef="let row">{{ date(row.fechaEstimada || row.fechaActualizacion) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let row"><button mat-icon-button type="button" title="Ver detalle" (click)="open(row)"><mat-icon>visibility</mat-icon></button></td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
+    @if (!loading && rows.length === 0) { <p class="empty">No se encontraron solicitudes de compra.</p> }
+    <footer class="pager">
+      <span>Total: {{ totalElements }}</span>
+      <button mat-stroked-button type="button" (click)="previous()" [disabled]="page === 0"><mat-icon>chevron_left</mat-icon> Anterior</button>
+      <span>Página {{ page + 1 }} de {{ totalPages || 1 }}</span>
+      <button mat-stroked-button type="button" (click)="next()" [disabled]="totalPages > 0 && page + 1 >= totalPages">Siguiente <mat-icon>chevron_right</mat-icon></button>
+    </footer>
+  </section>
+</div>
+
+@if (selected) {
+  <div class="detail-backdrop" (click)="closeDetail()"></div>
+  <aside class="detail-panel ceropapel-detail">
+    <button mat-icon-button class="close-button" type="button" (click)="closeDetail()"><mat-icon>close</mat-icon></button>
+    <p class="eyebrow">CeroPapel</p>
+    <h2>Solicitud de Compra {{ display(selected.folio || selected.codigo || selected.id) }}</h2>
+    <p class="detail-subtitle">{{ shortText(selected.descripcion || selected.titulo, 220) }}</p>
+
+    <nav class="detail-tabs" aria-label="Detalle solicitud CeroPapel">
+      <button type="button" [class.active]="activeTab === 'resumen'" (click)="setTab('resumen')">Resumen</button>
+      <button type="button" [class.active]="activeTab === 'movimientos'" (click)="setTab('movimientos')">Movimientos</button>
+      <button type="button" [class.active]="activeTab === 'detalle'" (click)="setTab('detalle')">Detalle</button>
+      <button type="button" [class.active]="activeTab === 'json'" (click)="setTab('json')">JSON técnico</button>
+    </nav>
+
+    @if (activeTab === 'resumen') {
+      <section class="tab-content">
+        <div class="detail-grid">
+          <div><span>Folio / ID</span><strong>{{ display(selected.folio || selected.codigo || selected.id) }}</strong></div>
+          <div><span>Estado</span><strong><span class="status-chip">{{ display(selected.estado) }}</span></strong></div>
+          <div><span>Urgencia</span><strong>{{ urgencyLabel(selected.urgencia) }}</strong></div>
+          <div><span>Fecha creación</span><strong>{{ date(selected.fechaCreacion) }}</strong></div>
+          <div><span>Fecha actualización</span><strong>{{ date(selected.fechaActualizacion) }}</strong></div>
+          <div><span>Fecha estimada</span><strong>{{ date(selected.fechaEstimada) }}</strong></div>
+          <div><span>Usuario solicitante / ID</span><strong>{{ display(selected.solicitante || selected.usuarioId) }}</strong></div>
+          <div><span>Unidad / ubicación</span><strong>{{ display(selected.unidad || selected.ubicacionId) }}</strong></div>
+          <div><span>Programa</span><strong>{{ display(selected.programaId) }}</strong></div>
+          <div><span>Monto estimado</span><strong>{{ amount(selected.montoEstimado) }}</strong></div>
+        </div>
+        <div class="description-card">
+          <h3>Justificación / materia</h3>
+          <p>{{ display(selected.descripcion || selected.titulo) }}</p>
+        </div>
+      </section>
+    }
+
+    @if (activeTab === 'movimientos') {
+      <section class="tab-content">
+        @if (movements(selected).length === 0) {
+          <p class="empty-inline">No se informaron movimientos asociados en la respuesta de CeroPapel.</p>
+        } @else {
+          <div class="timeline">
+            @for (movement of movements(selected); track movement?.id || $index) {
+              <article class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-body">
+                  <header>
+                    <strong>{{ movementTitle(movement) }}</strong>
+                    <span>{{ movementDate(movement) }}</span>
+                  </header>
+                  <p>{{ movementObservation(movement) }}</p>
+                  <small>Usuario: {{ movementUser(movement) }}</small>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    @if (activeTab === 'detalle') {
+      <section class="tab-content">
+        <div class="detail-grid">
+          <div><span>ID usuario</span><strong>{{ display(selected.usuarioId) }}</strong></div>
+          <div><span>ID ubicación</span><strong>{{ display(selected.ubicacionId) }}</strong></div>
+          <div><span>ID programa</span><strong>{{ display(selected.programaId) }}</strong></div>
+          <div><span>Registro</span><strong>{{ display(selected.registro) }}</strong></div>
+          <div><span>Observación 1</span><strong>{{ display(selected.observacion1) }}</strong></div>
+          <div><span>Observación 2</span><strong>{{ display(selected.observacion2) }}</strong></div>
+        </div>
+        <div class="description-card">
+          <h3>Datos operativos relevantes</h3>
+          <p>Esta vista resume los campos principales enviados por CeroPapel. Para validar nombres técnicos, revisar la pestaña JSON técnico.</p>
+        </div>
+      </section>
+    }
+
+    @if (activeTab === 'json') {
+      <section class="tab-content">
+        <pre class="raw-json">{{ rawJson(selected.raw) }}</pre>
+      </section>
+    }
+  </aside>
+}
