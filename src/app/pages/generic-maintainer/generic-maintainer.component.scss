@@ -1,0 +1,104 @@
+.multi-select-field {
+  border: 1px solid #d0d5dd;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 14px;
+  min-width: 0;
+}
+
+.multi-select-field.multi-invalid {
+  border-color: #d92d20;
+  box-shadow: 0 0 0 3px rgba(217, 45, 32, .08);
+}
+
+.multi-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #344054;
+  margin-bottom: 10px;
+}
+
+.multi-label span { color: #d92d20; }
+.multi-search { width: 100%; }
+
+.selected-chips,
+.role-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.selected-chips {
+  min-height: 42px;
+  padding: 8px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  margin-bottom: 12px;
+}
+
+.selected-chips.empty { color: #667085; }
+.chip-placeholder { font-size: 13px; }
+
+.role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eff4ff;
+  color: #175cd3;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .01em;
+  white-space: nowrap;
+}
+
+.role-chip.small {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.role-chip button {
+  border: 0;
+  background: transparent;
+  color: #175cd3;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+}
+
+.multi-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  max-height: 260px;
+  overflow: auto;
+  padding: 4px;
+}
+
+.multi-options mat-checkbox {
+  display: block;
+  padding: 8px 10px;
+  border: 1px solid #e4e7ec;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.multi-options mat-checkbox:hover { background: #f8fafc; }
+.option-main { display: block; font-weight: 800; color: #101828; }
+.option-secondary { display: block; color: #667085; font-size: 12px; margin-top: 2px; }
+.multi-empty { color: #667085; font-size: 13px; padding: 10px; }
+.multi-error { color: #d92d20; font-size: 12px; margin-top: 8px; }
+
+@media (max-width: 1100px) {
+  .multi-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 700px) {
+  .multi-options { grid-template-columns: 1fr; max-height: 320px; }
+  .role-chip { white-space: normal; }
+}

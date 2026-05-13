@@ -1,0 +1,99 @@
+<div class="page-container ceropapel-page">
+  <header class="page-header">
+    <p class="eyebrow">Gestión Subdirección</p>
+    <h1>Solicitudes de Compra</h1>
+    <p>Consulta de solicitudes originadas en CeroPapel para seguimiento presupuestario y trazabilidad previa a la orden de compra.</p>
+  </header>
+
+  <section class="status-card" [class.status-ok]="status?.authenticated" [class.status-warning]="!status?.authenticated">
+    <div>
+      <strong>Estado integración CeroPapel</strong>
+      <p>{{ status?.message || 'Validando conexión...' }}</p>
+      <small>Origen: {{ status?.baseUrl || 'https://ceropapel-integracion-api.dssm.cl/api' }}{{ status?.purchaseRequestsPath || '' }}</small>
+    </div>
+    <button mat-stroked-button type="button" (click)="checkStatus()"><mat-icon>sync</mat-icon> Verificar conexión</button>
+  </section>
+
+  <section class="toolbar-card">
+    <div class="search-box">
+      <mat-icon>search</mat-icon>
+      <input [(ngModel)]="search" placeholder="Buscar por folio, solicitante, unidad, estado o materia" (keyup.enter)="load(0)">
+    </div>
+    <button mat-flat-button color="primary" type="button" (click)="load(0)"><mat-icon>search</mat-icon> Buscar</button>
+    <button mat-stroked-button type="button" (click)="clear()"><mat-icon>close</mat-icon> Limpiar</button>
+  </section>
+
+  <section class="table-card">
+    @if (loading) {
+      <div class="loading"><mat-spinner diameter="36"></mat-spinner><span>Consultando CeroPapel...</span></div>
+    }
+    <div class="table-wrapper">
+      <table mat-table [dataSource]="rows" class="responsive-table ceropapel-table">
+        <ng-container matColumnDef="folio">
+          <th mat-header-cell *matHeaderCellDef>Folio / ID</th>
+          <td mat-cell *matCellDef="let row"><button type="button" class="link-button" (click)="open(row)">{{ display(row.folio || row.codigo || row.id) }}</button></td>
+        </ng-container>
+        <ng-container matColumnDef="titulo">
+          <th mat-header-cell *matHeaderCellDef>Materia / descripción</th>
+          <td mat-cell *matCellDef="let row"><strong>{{ display(row.titulo) }}</strong><small>{{ display(row.descripcion) }}</small></td>
+        </ng-container>
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let row"><span class="status-chip">{{ display(row.estado) }}</span></td>
+        </ng-container>
+        <ng-container matColumnDef="solicitante">
+          <th mat-header-cell *matHeaderCellDef>Solicitante</th>
+          <td mat-cell *matCellDef="let row">{{ display(row.solicitante) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="unidad">
+          <th mat-header-cell *matHeaderCellDef>Unidad</th>
+          <td mat-cell *matCellDef="let row">{{ display(row.unidad) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="fechaCreacion">
+          <th mat-header-cell *matHeaderCellDef>Fecha creación</th>
+          <td mat-cell *matCellDef="let row">{{ display(row.fechaCreacion) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="montoEstimado">
+          <th mat-header-cell *matHeaderCellDef>Monto estimado</th>
+          <td mat-cell *matCellDef="let row">{{ display(row.montoEstimado) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let row"><button mat-icon-button type="button" title="Ver detalle" (click)="open(row)"><mat-icon>visibility</mat-icon></button></td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
+    @if (!loading && rows.length === 0) { <p class="empty">No se encontraron solicitudes de compra.</p> }
+    <footer class="pager">
+      <span>Total: {{ totalElements }}</span>
+      <button mat-stroked-button type="button" (click)="previous()" [disabled]="page === 0"><mat-icon>chevron_left</mat-icon> Anterior</button>
+      <span>Página {{ page + 1 }} de {{ totalPages || 1 }}</span>
+      <button mat-stroked-button type="button" (click)="next()" [disabled]="totalPages > 0 && page + 1 >= totalPages">Siguiente <mat-icon>chevron_right</mat-icon></button>
+    </footer>
+  </section>
+</div>
+
+@if (selected) {
+  <div class="detail-backdrop" (click)="closeDetail()"></div>
+  <aside class="detail-panel">
+    <button mat-icon-button class="close-button" type="button" (click)="closeDetail()"><mat-icon>close</mat-icon></button>
+    <p class="eyebrow">CeroPapel</p>
+    <h2>{{ display(selected.titulo || selected.folio || selected.id) }}</h2>
+    <div class="detail-grid">
+      <div><span>Folio / ID</span><strong>{{ display(selected.folio || selected.codigo || selected.id) }}</strong></div>
+      <div><span>Estado</span><strong>{{ display(selected.estado) }}</strong></div>
+      <div><span>Solicitante</span><strong>{{ display(selected.solicitante) }}</strong></div>
+      <div><span>Unidad</span><strong>{{ display(selected.unidad) }}</strong></div>
+      <div><span>Fecha creación</span><strong>{{ display(selected.fechaCreacion) }}</strong></div>
+      <div><span>Monto estimado</span><strong>{{ display(selected.montoEstimado) }}</strong></div>
+    </div>
+    <section>
+      <h3>Descripción</h3>
+      <p>{{ display(selected.descripcion) }}</p>
+    </section>
+    <button mat-stroked-button type="button" (click)="rawVisible = !rawVisible"><mat-icon>data_object</mat-icon> {{ rawVisible ? 'Ocultar JSON técnico' : 'Ver JSON técnico' }}</button>
+    @if (rawVisible) { <pre class="raw-json">{{ rawJson(selected.raw) }}</pre> }
+  </aside>
+}
