@@ -1,0 +1,222 @@
+<div class="page-container ceropapel-page">
+  <header class="page-header">
+    <p class="eyebrow">Gestión Subdirección</p>
+    <h1>Solicitudes de Compra</h1>
+    <p>Consulta de solicitudes originadas en CeroPapel para seguimiento presupuestario y trazabilidad previa a la orden de compra.</p>
+  </header>
+
+  <section class="status-card" [class.status-ok]="status?.authenticated" [class.status-warning]="!status?.authenticated">
+    <div>
+      <strong>Estado integración CeroPapel</strong>
+      <p>{{ status?.message || 'Validando conexión...' }}</p>
+      <small>Origen: {{ status?.baseUrl || 'https://ceropapel-integracion-api.dssm.cl' }}{{ status?.purchaseRequestsPath || '' }}</small>
+    </div>
+    <button mat-stroked-button type="button" (click)="checkStatus()"><mat-icon>sync</mat-icon> Verificar conexión</button>
+  </section>
+
+  <section class="toolbar-card ceropapel-filters">
+    <label class="id-filter">
+      <span>ID solicitud</span>
+      <input [(ngModel)]="requestId" placeholder="Ej: 9979" inputmode="numeric" (keyup.enter)="load(0)">
+    </label>
+    <div class="search-box">
+      <mat-icon>search</mat-icon>
+      <input [(ngModel)]="search" placeholder="Filtro textual sobre la página actual" (keyup.enter)="load(0)">
+    </div>
+    <label class="date-filter">
+      <span>Desde</span>
+      <input type="date" [(ngModel)]="startDate">
+    </label>
+    <label class="date-filter">
+      <span>Hasta</span>
+      <input type="date" [(ngModel)]="endDate">
+    </label>
+    <label class="date-filter size-filter">
+      <span>Por página</span>
+      <select [(ngModel)]="size" (change)="changePageSize()">
+        <option [ngValue]="10">10</option>
+        <option [ngValue]="20">20</option>
+        <option [ngValue]="50">50</option>
+        <option [ngValue]="100">100</option>
+      </select>
+    </label>
+    <button mat-flat-button color="primary" type="button" (click)="load(0)"><mat-icon>search</mat-icon> Buscar</button>
+    <button mat-stroked-button type="button" (click)="clear()"><mat-icon>close</mat-icon> Limpiar</button>
+  </section>
+
+  <section class="table-card">
+    @if (loading) {
+      <div class="loading"><mat-spinner diameter="36"></mat-spinner><span>Consultando CeroPapel...</span></div>
+    }
+    <div class="table-wrapper">
+      <table mat-table [dataSource]="rows" class="responsive-table ceropapel-table">
+        <ng-container matColumnDef="folio">
+          <th mat-header-cell *matHeaderCellDef>Folio / ID</th>
+          <td mat-cell *matCellDef="let row"><button type="button" class="link-button" (click)="open(row)">{{ display(id(row)) }}</button></td>
+        </ng-container>
+        <ng-container matColumnDef="titulo">
+          <th mat-header-cell *matHeaderCellDef>Materia / justificación</th>
+          <td mat-cell *matCellDef="let row">
+            <strong>{{ shortText(title(row), 150) }}</strong>
+            <small>{{ shortText(justification(row), 190) }}</small>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let row"><span class="status-chip">{{ display(statusValue(row)) }}</span></td>
+        </ng-container>
+        <ng-container matColumnDef="urgencia">
+          <th mat-header-cell *matHeaderCellDef>Urgencia</th>
+          <td mat-cell *matCellDef="let row"><span class="urgency-chip" [class.urgent]="urgencyClass(row)">{{ urgencyLabel(urgency(row)) }}</span></td>
+        </ng-container>
+        <ng-container matColumnDef="unidad">
+          <th mat-header-cell *matHeaderCellDef>Unidad</th>
+          <td mat-cell *matCellDef="let row"><strong>{{ display(unit(row)) }}</strong></td>
+        </ng-container>
+        <ng-container matColumnDef="solicitante">
+          <th mat-header-cell *matHeaderCellDef>Solicitante</th>
+          <td mat-cell *matCellDef="let row">{{ display(requester(row)) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="fechaCreacion">
+          <th mat-header-cell *matHeaderCellDef>Creación</th>
+          <td mat-cell *matCellDef="let row">{{ date(createdAt(row)) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="monto">
+          <th mat-header-cell *matHeaderCellDef>Total estimado</th>
+          <td mat-cell *matCellDef="let row">{{ totalEstimated(row) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let row"><button mat-icon-button type="button" title="Ver detalle" (click)="open(row)"><mat-icon>visibility</mat-icon></button></td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
+    @if (!loading && rows.length === 0) { <p class="empty">No se encontraron solicitudes de compra.</p> }
+    <footer class="pager">
+      <span>Total: {{ totalElements }} · {{ size }} por página</span>
+      <button mat-stroked-button type="button" (click)="previous()" [disabled]="page === 0"><mat-icon>chevron_left</mat-icon> Anterior</button>
+      <span>Página {{ page + 1 }} de {{ totalPages || 1 }}</span>
+      <button mat-stroked-button type="button" (click)="next()" [disabled]="totalPages > 0 && page + 1 >= totalPages">Siguiente <mat-icon>chevron_right</mat-icon></button>
+    </footer>
+  </section>
+</div>
+
+@if (selected) {
+  <div class="detail-backdrop" (click)="closeDetail()"></div>
+  <aside class="detail-panel ceropapel-detail">
+    <button mat-icon-button class="close-button" type="button" (click)="closeDetail()"><mat-icon>close</mat-icon></button>
+    <p class="eyebrow">CeroPapel</p>
+    <h2>Solicitud de Compra {{ display(id(selected)) }}</h2>
+    <p class="detail-subtitle">{{ shortText(title(selected), 260) }}</p>
+
+    <nav class="detail-tabs" aria-label="Detalle solicitud CeroPapel">
+      <button type="button" [class.active]="activeTab === 'resumen'" (click)="setTab('resumen')">Resumen</button>
+      <button type="button" [class.active]="activeTab === 'items'" (click)="setTab('items')">Ítems solicitados</button>
+      <button type="button" [class.active]="activeTab === 'trazabilidad'" (click)="setTab('trazabilidad')">Trazabilidad</button>
+      <button type="button" [class.active]="activeTab === 'compradores'" (click)="setTab('compradores')">Compradores</button>
+      <button type="button" [class.active]="activeTab === 'json'" (click)="setTab('json')">JSON técnico</button>
+    </nav>
+
+    @if (activeTab === 'resumen') {
+      <section class="tab-content">
+        <div class="kpi-strip">
+          <article><span>Estado actual</span><strong>{{ display(statusValue(selected)) }}</strong></article>
+          <article><span>Total estimado</span><strong>{{ totalEstimated(selected) }}</strong></article>
+          <article><span>Urgencia</span><strong>{{ urgencyLabel(urgency(selected)) }}</strong></article>
+        </div>
+        <div class="detail-grid">
+          <div><span>Folio / ID</span><strong>{{ display(id(selected)) }}</strong></div>
+          <div><span>Solicitante</span><strong>{{ display(requester(selected)) }}</strong></div>
+          <div><span>Unidad solicitante</span><strong>{{ display(unit(selected)) }}</strong></div>
+          <div><span>Fecha creación</span><strong>{{ date(createdAt(selected)) }}</strong></div>
+          <div><span>Fecha estimada de uso</span><strong>{{ date(estimatedAt(selected)) }}</strong></div>
+          <div><span>Última actualización relevante</span><strong>{{ date(updatedAt(selected)) }}</strong></div>
+          <div><span>Autorizador Subdirección Adm.</span><strong>{{ display(rawValue(selected, 'autorizador_sub_administrativa')) }}</strong></div>
+          <div><span>Estado autorización</span><strong>{{ display(rawValue(selected, 'estado_autorizador')) }}</strong></div>
+          <div><span>Derivador Abastecimiento</span><strong>{{ display(rawValue(selected, 'derivador_abastecimiento')) }}</strong></div>
+          <div><span>Unidad Adquisiciones</span><strong>{{ display(rawValue(selected, 'unidad_adquisiciones')) }}</strong></div>
+        </div>
+        <div class="description-card">
+          <h3>Justificación / materia</h3>
+          <p>{{ display(justification(selected)) }}</p>
+        </div>
+      </section>
+    }
+
+    @if (activeTab === 'items') {
+      <section class="tab-content">
+        @if (items(selected).length === 0) {
+          <p class="empty-inline">No se informaron ítems asociados en la respuesta de CeroPapel.</p>
+        } @else {
+          <div class="item-list">
+            @for (item of items(selected); track item?.id || $index) {
+              <article class="item-card">
+                <header>
+                  <strong>{{ itemName(item) }}</strong>
+                  <span>{{ itemTotal(item) }}</span>
+                </header>
+                <div class="item-meta">
+                  <span>Cantidad: <b>{{ itemQty(item) }}</b></span>
+                  <span>Unidad: <b>{{ itemUnit(item) }}</b></span>
+                  <span>Precio: <b>{{ itemPrice(item) }}</b></span>
+                </div>
+                <p>{{ display(item?.observacion ?? item?.observation) }}</p>
+              </article>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    @if (activeTab === 'trazabilidad') {
+      <section class="tab-content">
+        @if (trace(selected).length === 0) {
+          <p class="empty-inline">No se informó trazabilidad asociada en la respuesta de CeroPapel.</p>
+        } @else {
+          <div class="timeline">
+            @for (step of trace(selected); track step?.label + '-' + $index) {
+              <article class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-body">
+                  <header>
+                    <strong>{{ display(step.label) }}</strong>
+                    <span>{{ date(step.date) }}</span>
+                  </header>
+                  <p><b>{{ display(step.state) }}</b></p>
+                  <small>Responsable: {{ display(step.person) }}</small>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    @if (activeTab === 'compradores') {
+      <section class="tab-content">
+        @if (buyers(selected).length === 0) {
+          <p class="empty-inline">No se informaron compradores asignados.</p>
+        } @else {
+          <div class="buyer-grid">
+            @for (buyer of buyers(selected); track buyer?.id || $index) {
+              <article class="buyer-card">
+                <span>Comprador</span>
+                <strong>{{ buyerName(buyer) }}</strong>
+                <small>Asignación: {{ buyerDate(buyer) }}</small>
+              </article>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    @if (activeTab === 'json') {
+      <section class="tab-content">
+        <p class="json-help">Respuesta técnica completa. Los campos sensibles se ocultan automáticamente.</p>
+        <pre class="raw-json">{{ rawJson(selected.raw) }}</pre>
+      </section>
+    }
+  </aside>
+}
