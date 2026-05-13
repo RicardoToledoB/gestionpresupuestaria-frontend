@@ -1,0 +1,83 @@
+<div class="page">
+  <h1 class="page-title">Dashboard - Presupuesto Disponible</h1>
+  <p class="page-subtitle">Resumen presupuestario por programa, equivalente al resumen del Excel, más indicadores ejecutivos de CDP, órdenes de compra y alertas.</p>
+
+  <div class="kpi-grid">
+    <mat-card class="kpi-card"><mat-card-content><div class="kpi-label">Presupuesto vigente</div><div class="kpi-value">{{ summary?.totalCurrentBudget | currency:'CLP':'symbol-narrow':'1.0-0' }}</div></mat-card-content></mat-card>
+    <mat-card class="kpi-card"><mat-card-content><div class="kpi-label">CDP emitidos</div><div class="kpi-value">{{ summary?.totalCdpIssued | currency:'CLP':'symbol-narrow':'1.0-0' }}</div></mat-card-content></mat-card>
+    <mat-card class="kpi-card"><mat-card-content><div class="kpi-label">Ejecutado por OC</div><div class="kpi-value">{{ summary?.totalExecutedByOc | currency:'CLP':'symbol-narrow':'1.0-0' }}</div></mat-card-content></mat-card>
+    <mat-card class="kpi-card kpi-available"><mat-card-content><div class="kpi-label">Presupuesto disponible</div><div class="kpi-value">{{ summary?.totalAvailableBalance | currency:'CLP':'symbol-narrow':'1.0-0' }}</div></mat-card-content></mat-card>
+    <mat-card class="kpi-card"><mat-card-content><div class="kpi-label">Posible liberación</div><div class="kpi-value">{{ summary?.totalPossibleRelease | currency:'CLP':'symbol-narrow':'1.0-0' }}</div></mat-card-content></mat-card>
+  </div>
+
+  <mat-card class="table-card">
+    <mat-card-header>
+      <mat-card-title>Resumen presupuestario por programa</mat-card-title>
+      <mat-card-subtitle>Vista equivalente a la hoja Resumen del Excel: presupuesto vigente, CDP emitidos, saldos, alertas y posible liberación.</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="programSummary" class="full-width wide-table">
+          <ng-container matColumnDef="programName"><th mat-header-cell *matHeaderCellDef>Programa</th><td mat-cell *matCellDef="let r">{{ r.programName }}</td></ng-container>
+          <ng-container matColumnDef="subtitle"><th mat-header-cell *matHeaderCellDef>St</th><td mat-cell *matCellDef="let r">{{ r.subtitle || '-' }}</td></ng-container>
+          <ng-container matColumnDef="currentBudget"><th mat-header-cell *matHeaderCellDef>Presupuesto vigente</th><td mat-cell *matCellDef="let r">{{ r.currentBudget | currency:'CLP':'symbol-narrow':'1.0-0' }}</td></ng-container>
+          <ng-container matColumnDef="cdpIssued"><th mat-header-cell *matHeaderCellDef>Total CDP emitidos</th><td mat-cell *matCellDef="let r">{{ r.cdpIssued | currency:'CLP':'symbol-narrow':'1.0-0' }}</td></ng-container>
+          <ng-container matColumnDef="cdpPendingBalance"><th mat-header-cell *matHeaderCellDef>CDP en saldos</th><td mat-cell *matCellDef="let r">{{ r.cdpPendingBalance | currency:'CLP':'symbol-narrow':'1.0-0' }}</td></ng-container>
+          <ng-container matColumnDef="availableBalance"><th mat-header-cell *matHeaderCellDef>Presupuesto disponible</th><td mat-cell *matCellDef="let r">{{ r.availableBalance | currency:'CLP':'symbol-narrow':'1.0-0' }}</td></ng-container>
+          <ng-container matColumnDef="cdpFollowUp"><th mat-header-cell *matHeaderCellDef>CDP seguimiento</th><td mat-cell *matCellDef="let r">{{ r.cdpFollowUp }}</td></ng-container>
+          <ng-container matColumnDef="cdpAlert"><th mat-header-cell *matHeaderCellDef>CDP alerta</th><td mat-cell *matCellDef="let r">{{ r.cdpAlert }}</td></ng-container>
+          <ng-container matColumnDef="possibleRelease"><th mat-header-cell *matHeaderCellDef>Posible liberar</th><td mat-cell *matCellDef="let r">{{ r.possibleRelease | currency:'CLP':'symbol-narrow':'1.0-0' }}</td></ng-container>
+          <tr mat-header-row *matHeaderRowDef="resumenColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: resumenColumns;"></tr>
+        </table>
+      </div>
+      @if (programSummary.length === 0) { <div class="empty-state">No existe resumen presupuestario disponible. Importe el Excel o valide la carga.</div> }
+    </mat-card-content>
+  </mat-card>
+
+  <div class="charts-grid">
+    <mat-card class="chart-card">
+      <mat-card-header><mat-card-title>Presupuesto por programa</mat-card-title></mat-card-header>
+      <mat-card-content>
+        @for (p of charts?.programs || []; track p.program) {
+          <div class="bar-row"><div class="bar-label"><strong>{{ p.program }}</strong><span>{{ p.budget | currency:'CLP':'symbol-narrow':'1.0-0' }}</span></div><div class="bar-track"><div class="bar-fill" [style.width.%]="percent(p.budget, maxProgramBudget())"></div></div></div>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="chart-card">
+      <mat-card-header><mat-card-title>CDP por estado</mat-card-title></mat-card-header>
+      <mat-card-content class="status-grid">
+        @for (s of charts?.cdpByStatus || []; track s.status) {
+          <div class="status-box"><span>{{ s.status }}</span><strong>{{ s.count }}</strong></div>
+        }
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <mat-card class="table-card">
+    <mat-card-header><mat-card-title>Top CDP con mayor saldo pendiente</mat-card-title></mat-card-header>
+    <mat-card-content>
+      @for (c of charts?.topPendingCdps || []; track c.cdpNumber + c.pendingBalance) {
+        <div class="bar-row"><div class="bar-label"><strong>{{ c.cdpNumber }} - {{ c.description }}</strong><span>{{ c.pendingBalance | currency:'CLP':'symbol-narrow':'1.0-0' }}</span></div><div class="bar-track"><div class="bar-fill warn" [style.width.%]="percent(c.pendingBalance, maxTopPending())"></div></div></div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="table-card">
+    <mat-card-header><mat-card-title>CDP en seguimiento / alerta</mat-card-title></mat-card-header>
+    <mat-card-content>
+      <div class="table-wrapper">
+      <table mat-table [dataSource]="alerts" class="full-width wide-table">
+        <ng-container matColumnDef="cdpNumber"><th mat-header-cell *matHeaderCellDef>CDP</th><td mat-cell *matCellDef="let row">{{ row.cdpNumber }}</td></ng-container>
+        <ng-container matColumnDef="description"><th mat-header-cell *matHeaderCellDef>Descripción</th><td mat-cell *matCellDef="let row">{{ row.description }}</td></ng-container>
+        <ng-container matColumnDef="pendingBalance"><th mat-header-cell *matHeaderCellDef>Saldo pendiente</th><td mat-cell *matCellDef="let row">{{ row.pendingBalance | currency:'CLP':'symbol-narrow':'1.0-0' }}</td></ng-container>
+        <ng-container matColumnDef="alertStatus"><th mat-header-cell *matHeaderCellDef>Estado</th><td mat-cell *matCellDef="let row"><span class="status-chip status-follow">{{ row.alertStatus }}</span></td></ng-container>
+        <ng-container matColumnDef="suggestedAction"><th mat-header-cell *matHeaderCellDef>Acción sugerida</th><td mat-cell *matCellDef="let row">{{ row.suggestedAction }}</td></ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
