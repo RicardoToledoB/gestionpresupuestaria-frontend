@@ -1,0 +1,199 @@
+<div class="page">
+  <h1 class="page-title">Órdenes de compra</h1>
+  <p class="page-subtitle">Gestión presupuestaria / Órdenes de compra. CRUD completo, eliminación lógica, recuperación y recálculo automático del CDP asociado.</p>
+
+  @if (canWrite()) {
+  <mat-card class="table-card form-card">
+    <mat-card-content>
+      <h2 class="section-title">{{ editingId ? 'Editar orden de compra' : 'Crear nueva orden de compra' }}</h2>
+      <form [formGroup]="form" (ngSubmit)="save()" class="maintainer-form">
+        <mat-form-field appearance="outline">
+          <mat-label>Número OC</mat-label>
+          <input matInput formControlName="orderNumber">
+          <mat-error>Campo obligatorio</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="date-field">
+          <mat-label>Fecha OC</mat-label>
+          <input matInput [matDatepicker]="orderDatePicker" formControlName="orderDate" readonly placeholder="dd-mm-aaaa">
+          <mat-datepicker-toggle matIconSuffix [for]="orderDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #orderDatePicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Folio SIGFE</mat-label>
+          <input matInput formControlName="sigfeFolio">
+        </mat-form-field>
+
+        <div class="purchase-request-linker form-field-wide">
+          <div class="pr-linker-label">Solicitud de compra asociada</div>
+          @if (selectedPurchaseRequestId()) {
+            <div class="pr-linked-card">
+              <div>
+                <span>ID solicitud CeroPapel</span>
+                <strong>{{ selectedPurchaseRequestId() }}</strong>
+                @if (selectedPurchaseRequestSummary()) {
+                  <p>{{ selectedPurchaseRequestSummary() }}</p>
+                } @else {
+                  <p>La OC quedará vinculada a esta solicitud. Puede abrir el detalle para validar su origen administrativo.</p>
+                }
+              </div>
+              <div class="pr-linker-actions">
+                <button mat-stroked-button type="button" (click)="openCeroPapelRequest(selectedPurchaseRequestId())"><mat-icon>visibility</mat-icon>Ver detalle</button>
+                <button mat-stroked-button type="button" (click)="openPurchaseRequestPicker()"><mat-icon>search</mat-icon>Cambiar</button>
+                <button mat-icon-button type="button" matTooltip="Quitar solicitud asociada" (click)="clearPurchaseRequestAssociation()"><mat-icon>close</mat-icon></button>
+              </div>
+            </div>
+          } @else {
+            <div class="pr-empty-card">
+              <div>
+                <span>Sin solicitud asociada</span>
+                <p>Busque la solicitud en CeroPapel por ID, revise el detalle y selecciónela para vincular esta OC.</p>
+              </div>
+              <button mat-flat-button color="primary" type="button" (click)="openPurchaseRequestPicker()"><mat-icon>manage_search</mat-icon>Buscar solicitud</button>
+            </div>
+          }
+          <input type="hidden" formControlName="purchaseRequestId">
+        </div>
+
+        <mat-form-field appearance="outline" class="date-field">
+          <mat-label>Fecha recepción producto/servicio</mat-label>
+          <input matInput [matDatepicker]="productServiceReceptionPicker" formControlName="productServiceReceptionDate" readonly placeholder="dd-mm-aaaa">
+          <mat-datepicker-toggle matIconSuffix [for]="productServiceReceptionPicker"></mat-datepicker-toggle>
+          <mat-datepicker #productServiceReceptionPicker></mat-datepicker>
+        </mat-form-field>
+
+        <app-search-select
+          label="Programa"
+          placeholder="Buscar programa"
+          nullLabel="Seleccione"
+          [required]="true"
+          [options]="programs"
+          formControlName="programId">
+        </app-search-select>
+
+        <app-search-select
+          label="Proveedor"
+          placeholder="Buscar proveedor por RUT o razón social"
+          nullLabel="Sin proveedor"
+          [options]="providers"
+          formControlName="providerId">
+        </app-search-select>
+
+        <app-search-select
+          label="CDP asociado"
+          placeholder="Buscar CDP por número o descripción"
+          nullLabel="Sin CDP"
+          [options]="cdps"
+          formControlName="cdpId">
+        </app-search-select>
+
+        <app-search-select
+          label="Ítem presupuestario"
+          placeholder="Buscar ítem por código o nombre"
+          nullLabel="Sin ítem"
+          [options]="budgetItems"
+          formControlName="budgetItemId">
+        </app-search-select>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Comprometido</mat-label>
+          <input matInput type="number" formControlName="committedAmount">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Aumento / rebaja</mat-label>
+          <input matInput type="number" formControlName="adjustmentAmount">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Monto real</mat-label>
+          <input matInput type="number" formControlName="realAmount">
+        </mat-form-field>
+
+        <app-search-select
+          label="Estado"
+          placeholder="Buscar estado"
+          nullLabel="Sin Estado"
+          [allowNull]="false"
+          [options]="statusOptions"
+          valueKey="value"
+          formControlName="status">
+        </app-search-select>
+
+        <app-search-select
+          label="Subtítulo"
+          placeholder="Buscar subtítulo presupuestario"
+          nullLabel="Sin subtítulo"
+          [options]="subtitleOptions"
+          valueKey="label"
+          formControlName="subtitle">
+        </app-search-select>
+
+        <mat-checkbox formControlName="active">Activo</mat-checkbox>
+
+        <mat-form-field appearance="outline" class="form-field-wide">
+          <mat-label>Observación</mat-label>
+          <textarea matInput rows="2" formControlName="observation"></textarea>
+        </mat-form-field>
+
+        <div class="form-actions">
+          <button mat-flat-button color="primary" type="submit"><mat-icon>save</mat-icon>{{ editingId ? 'Guardar cambios' : 'Crear OC' }}</button>
+          <button mat-stroked-button type="button" (click)="cancelEdit()"><mat-icon>close</mat-icon>Cancelar</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+} @else {
+  <mat-card class="table-card read-only-card"><mat-card-content><strong>Modo solo lectura.</strong> Puede consultar órdenes de compra, pero no crear, editar, eliminar ni recuperar.</mat-card-content></mat-card>
+}
+
+  @if (isMercadoPublicoCooldownActive()) {
+    <div class="mp-cooldown-banner">
+      <mat-icon>schedule</mat-icon>
+      <div>
+        <strong>Mercado Público pausado temporalmente</strong>
+        <span>La API externa limitó consultas simultáneas. Nuevas consultas estarán disponibles en aproximadamente {{ mercadoPublicoCooldownSeconds() }} segundos. Si una OC ya fue consultada, el sistema mostrará su última información disponible desde caché.</span>
+      </div>
+    </div>
+  }
+
+  <mat-card class="table-card">
+    <mat-card-content>
+      <div class="table-toolbar">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Buscar OC</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput [formControl]="search" placeholder="OC, ID solicitud, SIGFE, programa, proveedor, CDP u observación">
+          @if (search.value) { <button mat-icon-button matSuffix type="button" aria-label="Limpiar búsqueda" (click)="clearSearch()"><mat-icon>close</mat-icon></button> }
+        </mat-form-field>
+        @if (canSeeDeleted()) { <mat-checkbox [formControl]="includeDeleted">Ver eliminadas</mat-checkbox> }
+        <button mat-stroked-button type="button" (click)="loadData()"><mat-icon>refresh</mat-icon>Actualizar</button>
+        @if (canExport()) { <button mat-stroked-button type="button" (click)="exportCurrentWindow()"><mat-icon>download</mat-icon>Exportar ventana</button> }
+        @if (canExport()) { <button mat-stroked-button type="button" (click)="exportFiltered()"><mat-icon>file_download</mat-icon>Exportar filtro</button> }
+      </div>
+
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="data" class="full-width wide-table purchase-orders-table">
+          <ng-container matColumnDef="orderNumber"><th mat-header-cell *matHeaderCellDef>OC</th><td mat-cell *matCellDef="let r"><button mat-button class="oc-code-button" type="button" matTooltip="Ver detalle de la OC en Mercado Público" [disabled]="isMercadoPublicoLoading(r)" (click)="openMercadoPublico(r)">{{ r.orderNumber }}</button></td></ng-container>
+          <ng-container matColumnDef="orderDate"><th mat-header-cell *matHeaderCellDef>Fecha OC</th><td mat-cell *matCellDef="let r">{{ r.orderDate | date:'dd-MM-yyyy' }}</td></ng-container>
+          <ng-container matColumnDef="purchaseRequestId"><th mat-header-cell *matHeaderCellDef>Solicitud CeroPapel</th><td mat-cell *matCellDef="let r">@if (r.purchaseRequestId) { <button mat-button class="oc-code-button request-link-button" type="button" matTooltip="Ver solicitud de compra CeroPapel" (click)="openCeroPapelRequest(r.purchaseRequestId)">{{ r.purchaseRequestId }}</button> } @else { <span>-</span> }</td></ng-container>
+          <ng-container matColumnDef="productServiceReceptionDate"><th mat-header-cell *matHeaderCellDef>Recepción producto/servicio</th><td mat-cell *matCellDef="let r">{{ r.productServiceReceptionDate | date:'dd-MM-yyyy' }}</td></ng-container>
+          <ng-container matColumnDef="programName"><th mat-header-cell *matHeaderCellDef>Programa</th><td mat-cell *matCellDef="let r">{{ r.programName }}</td></ng-container>
+          <ng-container matColumnDef="providerName"><th mat-header-cell *matHeaderCellDef>Proveedor</th><td mat-cell *matCellDef="let r">{{ r.providerName || '-' }}</td></ng-container>
+          <ng-container matColumnDef="cdpNumber"><th mat-header-cell *matHeaderCellDef>CDP</th><td mat-cell *matCellDef="let r">@if (r.cdpId && r.cdpNumber) { <button mat-button class="oc-code-button request-link-button" type="button" matTooltip="Ver detalle del CDP asociado" (click)="openCdpDetail(r)">{{ r.cdpNumber }}</button> } @else { <span>-</span> }</td></ng-container>
+          <ng-container matColumnDef="sigfeFolio"><th mat-header-cell *matHeaderCellDef>SIGFE</th><td mat-cell *matCellDef="let r">{{ r.sigfeFolio || '-' }}</td></ng-container>
+          <ng-container matColumnDef="committedAmount"><th mat-header-cell *matHeaderCellDef>Comprometido</th><td mat-cell *matCellDef="let r">{{ r.committedAmount | currency:'CLP':'symbol-narrow':'1.0-0' }}</td></ng-container>
+          <ng-container matColumnDef="realAmount"><th mat-header-cell *matHeaderCellDef>Monto real</th><td mat-cell *matCellDef="let r">{{ r.realAmount | currency:'CLP':'symbol-narrow':'1.0-0' }}</td></ng-container>
+          <ng-container matColumnDef="status"><th mat-header-cell *matHeaderCellDef>Estado</th><td mat-cell *matCellDef="let r">{{ humanizeStatus(r.status) }}</td></ng-container>
+          @if (canWrite()) { <ng-container matColumnDef="actions"><th mat-header-cell *matHeaderCellDef>Acciones</th><td mat-cell *matCellDef="let r" class="actions-cell"><div class="action-buttons"><button mat-icon-button class="action-button" matTooltip="Editar registro" aria-label="Editar registro" (click)="edit(r)" [disabled]="isDeleted(r)"><mat-icon>edit</mat-icon></button>@if (!isDeleted(r) && canDelete()) { <button mat-icon-button class="action-button action-danger" matTooltip="Eliminar lógicamente" aria-label="Eliminar lógicamente" (click)="softDelete(r)"><mat-icon>delete</mat-icon></button> } @else if (isDeleted(r) && canRestore()) { <button mat-icon-button class="action-button action-success" matTooltip="Recuperar registro" aria-label="Recuperar registro" (click)="restore(r)"><mat-icon>restore</mat-icon></button> }</div></td></ng-container> }
+          <tr mat-header-row *matHeaderRowDef="columns"></tr>
+          <tr mat-row *matRowDef="let row; columns: columns;" [class.deleted-row]="isDeleted(row)"></tr>
+        </table>
+      </div>
+
+      @if (!loading && data.length === 0) { <div class="empty-state">No se encontraron órdenes de compra para la búsqueda ingresada.</div> }
+      <mat-paginator [length]="totalElements" [pageIndex]="pageIndex" [pageSize]="pageSize" [pageSizeOptions]="[10, 20, 50, 100]" showFirstLastButtons (page)="onPage($event)"></mat-paginator>
+    </mat-card-content>
+  </mat-card>
+</div>
